@@ -8,7 +8,7 @@
 	"license": "MIT",
 	"scripts": {
 		"test": "nyc ava test.js",
-		"coverage": "nyc report --reporter=text-lcov > coverage.lcov"
+		"coverage": "nyc report --reporter=text-lcov > coverage.lcov && codecov"
 	},
 	"dependencies": {
 		"winston": "^2.4.2"
