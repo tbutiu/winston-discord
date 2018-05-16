@@ -65,6 +65,9 @@ DiscordLogger.prototype.log = function (level, msg, meta, callback) {
 				result.on('data', data => {
 					const response = JSON.parse(data);
 
+					if (response.code)
+						return reject(response);
+
 					return resolve(response);
 				});
 			});
@@ -79,15 +82,7 @@ DiscordLogger.prototype.log = function (level, msg, meta, callback) {
 	});
 
 	Promise.all(promises).then(results => {
-		const correctResults = results.filter(r => {
-			if (r.content === msg) return true;
-		});
-
-		if (results.length === correctResults.length) {
-			callback(null, level, msg, meta);
-		} else {
-			callback(new Error('One or more messages were not send with the correct content'));
-		}
+		callback(null, level, msg, meta);
 	}).catch(error => {
 		callback(error);
 	});

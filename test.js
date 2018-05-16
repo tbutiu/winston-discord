@@ -113,6 +113,25 @@ test('missing id or token', t => {
 	t.is(error.message, `Webhook has no ID or Token: ${webhook}`);
 });
 
+test.cb('invalid id or token', t => {
+	const logger = new (winston.Logger)({
+		transports: [
+			new (DiscordLogger)({ webhooks: webhookObjects[0] })
+		]
+	});
+
+	logger.log('info', 'Some message', (error, level, msg, meta) => {
+		if (error) {
+			t.is(error.code, 10015);
+			t.is(error.message, 'Unknown Webhook');
+			t.end();
+		} else {
+			t.fail();
+			t.end();
+		}
+	})
+});
+
 test.cb('send simple log message', t => {
 	const logger = new (winston.Logger)({
 		transports: [
