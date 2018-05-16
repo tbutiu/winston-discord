@@ -6,27 +6,35 @@ module.exports = DiscordLogger = winston.transports.DiscordLogger = function(opt
 	this.name = options.name || 'DiscordLogger';
 	this.level = options.level || 'info';
 
+	if (!options.webhooks)
+		throw new Error('Webhooks have to be set in options');
+
 	let webhooks = [];
 	if (typeof options.webhooks === 'string' || (typeof options.webhooks === 'object' && !Array.isArray(options.webhooks))) {
 		webhooks.push(options.webhooks)
 	} else if (Array.isArray(options.webhooks)) {
 		webhooks = options.webhooks;
+	} else {
+		throw new Error(`Webhooks has to be type 'string', 'object' or 'array'`);
 	}
 
 	webhooks = webhooks.map(webhook => {
 		if (typeof webhook === 'string') {
-			const webhookURLRegex = /(https?):\/\/([(a-z0-9).]+)\/api(?:\/v([0-9]+))*\/webhooks\/([0-9]{1,20})\/([a-z0-9_-]+)/gi;
+			const webhookURLRegex = /(https?):\/\/([a-z0-9]*).*(discordapp.com)\/api(?:\/v([0-9]+))*\/webhooks\/([0-9]{1,20})\/([a-z0-9_-]+)/gi;
 			const match = webhookURLRegex.exec(webhook);
 			if (match) {
-				return { 'id': match[4], 'token': match[5] };
-			} else {
-				return undefined;
+				return { 'id': match[5], 'token': match[6] };
 			}
-		} else if (typeof webhook === 'object') {
-			return { 'id': webhook.id, 'token': webhook.token };
-		}
 
-		return undefined;
+			throw new Error(`Invalid webhook URL: ${webhook}`);
+
+		} else if (typeof webhook === 'object') {
+			if (webhook.id && webhook.token) {
+				return { 'id': webhook.id, 'token': webhook.token };
+			}
+
+			throw new Error(`Webhook has no ID or Token: ${webhook}`);
+		}
 	});
 
 	this.webhooks = webhooks;
