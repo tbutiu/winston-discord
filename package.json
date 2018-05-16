@@ -6,6 +6,17 @@
 	"repository": "https://github.com/bram-codes/winston-discord.git",
 	"author": "Bram <bram@bram.codes>",
 	"license": "MIT",
+	"scripts": {
+		"test": "nyc ava test.js",
+		"coverage": "nyc report --reporter=text-lcov > coverage.lcov"
+	},
+	"dependencies": {
+		"winston": "^2.4.2"
+	},
+	"devDependencies": {
+		"ava": "^0.25.0",
+		"nyc": "^11.8.0"
+	},
 	"keywords": [
 		"winston",
 		"discord",
