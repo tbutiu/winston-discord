@@ -1,6 +1,6 @@
 {
 	"name": "winston-discord",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "A Discord transport for winston using webhooks",
 	"main": "index.js",
 	"repository": "https://github.com/bram-codes/winston-discord.git",
