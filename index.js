@@ -45,7 +45,7 @@ DiscordLogger.prototype.log = function (level, msg, meta, callback) {
 
 			const post = {
 				hostname: 'discordapp.com',
-				path: `/api/v6/webhooks/${webhook.id}/${webhook.token}`,
+				path: `/api/v6/webhooks/${webhook.id}/${webhook.token}?wait=true`,
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -54,23 +54,32 @@ DiscordLogger.prototype.log = function (level, msg, meta, callback) {
 			};
 
 			const request = https.request(post, result => {
-				result.setEncoding('utf8');
-				result.on('data', chunk => {
-					console.log('Response: ' + chunk);
+				result.on('data', data => {
+					const response = JSON.parse(data);
+
+					return resolve(response);
 				});
 			});
 
-			request.write(body, 'utf8', result => {
-				console.log(result);
-				return resolve(result);
+			request.on('error', (e) => {
+				return reject(e);
 			});
+
+			request.write(body);
+			request.end();
 		});
 	});
 
 	Promise.all(promises).then(results => {
-		console.log(results);
+		const correctResults = results.filter(r => {
+			if (r.content === msg) return true;
+		});
 
-		callback(null, level, msg, meta);
+		if (results.length === correctResults.length) {
+			callback(null, level, msg, meta);
+		} else {
+			callback(new Error('One or more messages were not send with the correct content'));
+		}
 	}).catch(error => {
 		callback(error);
 	});

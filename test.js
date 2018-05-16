@@ -69,8 +69,10 @@ test.cb('send simple log message', t => {
 		]
 	});
 
-	logger.log('error', 'This is a simple log message', (error, level, message, meta) => {
-		t.is(message, 'This is a simple log message');
+	const message = 'This is a simple log message';
+
+	logger.log('error', message, (error, level, msg, meta) => {
+		t.is(message, msg);
 		t.end();
 	});
 });
