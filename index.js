@@ -72,10 +72,6 @@ DiscordLogger.prototype.log = function (level, msg, meta, callback) {
 				});
 			});
 
-			request.on('error', (e) => {
-				return reject(e);
-			});
-
 			request.write(body);
 			request.end();
 		});
