@@ -2,9 +2,25 @@ const winston = require('winston');
 const util = require('util');
 const https = require('https');
 
+const defaultColors = {
+	error: 0xE8341C,
+	warn: 0xF2D42C,
+	info: 0x68C244,
+	verbose: 0x1CC3E8,
+	debug: 0xFF70FF,
+	silly: 0x999999,
+};
+
+const noColor = 0x36393E;
+
 module.exports = DiscordLogger = winston.transports.DiscordLogger = function(options) {
 	this.name = options.name || 'DiscordLogger';
 	this.level = options.level || 'info';
+
+	this.colors = options.colors || options.colors === false ? false : defaultColors;
+
+	if (typeof options.colors === 'object')
+		this.colors = options.colors;
 
 	if (!options.webhooks)
 		throw new Error('Webhooks have to be set in options');
@@ -28,12 +44,10 @@ module.exports = DiscordLogger = winston.transports.DiscordLogger = function(opt
 
 			throw new Error(`Invalid webhook URL: ${webhook}`);
 
-		} else if (typeof webhook === 'object') {
-			if (webhook.id && webhook.token) {
-				return { 'id': webhook.id, 'token': webhook.token };
-			}
-
-			throw new Error(`Webhook has no ID or Token: ${webhook}`);
+		} else if (typeof webhook === 'object' && webhook.id && webhook.token) {
+			return {'id': webhook.id, 'token': webhook.token};
+		} else {
+			throw new Error(`Webhook has no or invalid ID or Token: ${webhook}`);
 		}
 	});
 
@@ -43,14 +57,25 @@ module.exports = DiscordLogger = winston.transports.DiscordLogger = function(opt
 util.inherits(DiscordLogger, winston.Transport);
 
 DiscordLogger.prototype.log = function (level, msg, meta, callback) {
-	// Make message
-
 	const promises = this.webhooks.map(webhook => {
 		return new Promise((resolve, reject) => {
-			const body = JSON.stringify({
-				content: msg
+
+			const fields = Object.keys(meta).map(key => {
+				return { name: key, value: meta[key], inline: true }
 			});
 
+			// Request body
+			let body = JSON.stringify({
+				embeds: [{
+					title: level.charAt(0).toUpperCase() + level.slice(1),
+					description: msg,
+					color: this.colors ? this.colors[level] : noColor,
+					fields: fields,
+					timestamp: new Date().toISOString()
+				}]
+			});
+
+			// Post details
 			const post = {
 				hostname: 'discordapp.com',
 				path: `/api/v6/webhooks/${webhook.id}/${webhook.token}?wait=true`,
@@ -61,8 +86,16 @@ DiscordLogger.prototype.log = function (level, msg, meta, callback) {
 				}
 			};
 
+			// Request
 			const request = https.request(post, result => {
+				let chunks = [];
+
 				result.on('data', data => {
+					chunks.push(data);
+				});
+
+				result.on('end', () => {
+					let data = Buffer.concat(chunks);
 					const response = JSON.parse(data);
 
 					if (response.code)
@@ -70,6 +103,8 @@ DiscordLogger.prototype.log = function (level, msg, meta, callback) {
 
 					return resolve(response);
 				});
+
+
 			});
 
 			request.write(body);
@@ -78,8 +113,15 @@ DiscordLogger.prototype.log = function (level, msg, meta, callback) {
 	});
 
 	Promise.all(promises).then(results => {
-		callback(null, level, msg, meta);
+		let lvl = results[0].embeds[0].title;
+		let message = results[0].embeds[0].description;
+		let metadata = !results[0].embeds[0].fields ? null : results[0].embeds[0].fields.map((field) => {
+			return {[field.name]: field.value};
+		});
+
+		callback(null, lvl, message, metadata);
 	}).catch(error => {
+		console.log('promise error: ' + error);
 		callback(error);
 	});
 };

@@ -71,12 +71,12 @@ test('throw when webhooks option is not set', t => {
 
 test('do not accept webhooks option that is not a string, object or array', t => {
 	const errorBool = t.throws(() => {
-		new (winston.Logger)({ transports: [new (DiscordLogger)({ webhooks: true })]});
+		new (winston.Logger)({ transports: [new (DiscordLogger)({ webhooks: true })] });
 	});
 	t.is(errorBool.message, `Webhooks has to be type 'string', 'object' or 'array'`);
 
 	const errorNumber = t.throws(() => {
-		new (winston.Logger)({ transports: [new (DiscordLogger)({ webhooks: 12345 })]});
+		new (winston.Logger)({ transports: [new (DiscordLogger)({ webhooks: 12345 })] });
 	});
 	t.is(errorNumber.message, `Webhooks has to be type 'string', 'object' or 'array'`);
 });
@@ -94,7 +94,7 @@ test('missing id or token', t => {
 	const error = t.throws(() => {
 		new (winston.Logger)({ transports: [new (DiscordLogger)({ webhooks: webhook })]});
 	});
-	t.is(error.message, `Webhook has no ID or Token: ${webhook}`);
+	t.is(error.message, `Webhook has no or invalid ID or Token: ${webhook}`);
 });
 
 test.cb('invalid id or token', t => {
@@ -104,19 +104,59 @@ test.cb('invalid id or token', t => {
 		if (error) {
 			t.is(error.code, 10015);
 			t.is(error.message, 'Unknown Webhook');
-			t.end();
 		} else {
-			t.end();
+			t.fail();
 		}
+
+		t.end();
 	})
 });
 
-test.cb('send simple log message', t => {
+test.cb('simple log message', t => {
 	const logger = new (winston.Logger)({ transports: [new (DiscordLogger)({ webhooks: { id: process.env.WEBHOOK_ID, token: process.env.WEBHOOK_TOKEN } })] });
-	const message = 'This is a simple log message';
+	const message = 'This is just some general info, nothing special';
 
-	logger.log('error', message, (error, level, msg, meta) => {
-		t.is(message, msg);
+	logger.log('info', message, (error, level, msg, meta) => {
+		t.is(level, 'info');
+		t.is(msg, message);
+		t.deepEqual(meta, {});
+		t.end();
+	});
+});
+
+test.cb('log message with meta', t => {
+	const logger = new (winston.Logger)({ transports: [new (DiscordLogger)({ webhooks: { id: process.env.WEBHOOK_ID, token: process.env.WEBHOOK_TOKEN } })] });
+	const message = 'Oh no! Something went wrong with a process! :O';
+	const metadata = { processID: 1634, processName: 'SomeProcess', reason: 'It totally bailed on us' };
+
+	logger.log('error', message, metadata, (error, level, msg, meta) => {
+		t.is(level, 'error');
+		t.is(msg, message);
+		t.is(meta, metadata);
+		t.end();
+	});
+});
+
+test.cb('custom color', t => {
+	const logger = new (winston.Logger)({ transports: [new (DiscordLogger)({ colors: {'warn': 0xF58A07}, webhooks: { id: process.env.WEBHOOK_ID, token: process.env.WEBHOOK_TOKEN } })] });
+	const message = 'Vinny, come over here and take a look at this. This doesn\'t look too good man!';
+
+	logger.log('warn', message, (error, level, msg, meta) => {
+		t.is(level, 'warn');
+		t.is(msg, message);
+		t.deepEqual(meta, {});
+		t.end();
+	});
+});
+
+test.cb('no color', t => {
+	const logger = new (winston.Logger)({ transports: [new (DiscordLogger)({ colors: false, webhooks: { id: process.env.WEBHOOK_ID, token: process.env.WEBHOOK_TOKEN } })] });
+	const message = 'This embed looks rather dull';
+
+	logger.log('info', message, (error, level, msg, meta) => {
+		t.is(level, 'info');
+		t.is(msg, message);
+		t.deepEqual(meta, {});
 		t.end();
 	});
 });
