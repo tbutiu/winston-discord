@@ -160,3 +160,22 @@ test.cb('no color', t => {
 		t.end();
 	});
 });
+
+test.cb('set inline per meta field', t => {
+	const logger = new (winston.Logger)({ transports: [new (DiscordLogger)({ inline: {inline: true, thistoo: true, notinline: false}, webhooks: { id: process.env.WEBHOOK_ID, token: process.env.WEBHOOK_TOKEN } })] });
+	const message = 'We sometimes love inline';
+	const metadata = {
+		inline: 'This will be inline',
+		thistoo: 'Yep this one too',
+		notinline: 'This is not inline',
+		notevendefined: 'This one is not defined and will default to inline',
+		alsoundefined: 'Yea same'
+	};
+
+	logger.log('info', message, metadata, (error, level, msg, meta) => {
+		t.is(level, 'info');
+		t.is(msg, message);
+		t.deepEqual(meta, metadata);
+		t.end();
+	});
+});

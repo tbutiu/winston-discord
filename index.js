@@ -18,9 +18,10 @@ module.exports = DiscordLogger = winston.transports.DiscordLogger = function(opt
 	this.level = options.level || 'info';
 
 	this.colors = options.colors || options.colors === false ? false : defaultColors;
-
 	if (typeof options.colors === 'object')
 		this.colors = options.colors;
+
+	this.inline = options.inline;
 
 	if (!options.webhooks)
 		throw new Error('Webhooks have to be set in options');
@@ -61,7 +62,16 @@ DiscordLogger.prototype.log = function (level, msg, meta, callback) {
 		return new Promise((resolve, reject) => {
 
 			const fields = Object.keys(meta).map(key => {
-				return { name: key, value: meta[key], inline: true }
+				let inline = true;
+				if (typeof this.inline === 'object') {
+					if (typeof this.inline[key] !== 'undefined'){
+						inline = this.inline[key];
+					}
+				} else {
+					inline = this.inline;
+				}
+
+				return { name: key, value: meta[key], inline: inline }
 			});
 
 			// Request body
@@ -103,8 +113,6 @@ DiscordLogger.prototype.log = function (level, msg, meta, callback) {
 
 					return resolve(response);
 				});
-
-
 			});
 
 			request.write(body);
