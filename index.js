@@ -129,7 +129,6 @@ DiscordLogger.prototype.log = function (level, msg, meta, callback) {
 
 		callback(null, lvl, message, metadata);
 	}).catch(error => {
-		console.log('promise error: ' + error);
 		callback(error);
 	});
 };
