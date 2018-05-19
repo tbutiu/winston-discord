@@ -34,7 +34,19 @@ const options = {
     webhooks: [
         {id: '446240708299587584', token: 'W_y7cmhCv2KY-oKopLHFTTw08L0apQVS0bkrUDHV44Es4Vb-p3Z4uEEHEwpVkHVjpaqg'},
         {id: '446241166493483008', token: 'JeOKubEIRAcalZISmjGrG6DuzHX_KdE5Uzq_r0mK0318voc_7TRjC6NA_oe-fYX_eAhn'}
-    ]
+    ],
+
+    // Colors (optional Default: true)
+    colors: false, // Will only work in Discord in dark mode
+
+    // Change a level's color
+    colors: { 'warn': 0xF58A07 },
+
+    // Inline (optional Default: true)
+    inline: false,
+
+    // Set per meta
+    inline: { anythingMeta: false }
 };
 
 const logger = new (winston.Logger)({
