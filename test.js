@@ -17,12 +17,7 @@ const webhookUrls = [
 ];
 
 test('accept webhook url', t => {
-	const logger = new (winston.Logger)({
-		transports: [
-			new (DiscordLogger)({ webhooks: webhooksByUrl[0] })
-		]
-	});
-
+	const logger = new (winston.Logger)({ transports: [new (DiscordLogger)({ webhooks: webhooksByUrl[0] })] });
 	const webhooks = logger.transports.DiscordLogger.webhooks;
 
 	t.is(webhooks[0].id, '446240708299587584');
@@ -30,12 +25,7 @@ test('accept webhook url', t => {
 });
 
 test('accept array of webhook urls', t => {
-	const logger = new (winston.Logger)({
-		transports: [
-			new (DiscordLogger)({ webhooks: webhooksByUrl })
-		]
-	});
-
+	const logger = new (winston.Logger)({ transports: [new (DiscordLogger)({ webhooks: webhooksByUrl })] });
 	const webhooks = logger.transports.DiscordLogger.webhooks;
 
 	t.is(webhooks[0].id, '446240708299587584');
@@ -45,12 +35,7 @@ test('accept array of webhook urls', t => {
 });
 
 test('accept webhook id and token object', t => {
-	const logger = new (winston.Logger)({
-		transports: [
-			new (DiscordLogger)({ webhooks: webhooksByIdAndToken[0] })
-		]
-	});
-
+	const logger = new (winston.Logger)({ transports: [new (DiscordLogger)({ webhooks: webhooksByIdAndToken[0] })] });
 	const webhooks = logger.transports.DiscordLogger.webhooks;
 
 	t.is(webhooks[0].id, '446240708299587584');
@@ -58,8 +43,7 @@ test('accept webhook id and token object', t => {
 });
 
 test('accept array of webhook id and token objects', t => {
-	const logger = new (winston.Logger)({ transports: [new (DiscordLogger)({ webhooks: webhooksByIdAndToken })]});
-
+	const logger = new (winston.Logger)({ transports: [new (DiscordLogger)({ webhooks: webhooksByIdAndToken })] });
 	const webhooks = logger.transports.DiscordLogger.webhooks;
 
 	t.is(webhooks[0].id, '446240708299587584');
@@ -114,11 +98,7 @@ test('missing id or token', t => {
 });
 
 test.cb('invalid id or token', t => {
-	const logger = new (winston.Logger)({
-		transports: [
-			new (DiscordLogger)({ webhooks: webhookObjects[0] })
-		]
-	});
+	const logger = new (winston.Logger)({ transports: [new (DiscordLogger)({ webhooks: webhookObjects[0] })] });
 
 	logger.log('info', 'Some message', (error, level, msg, meta) => {
 		if (error) {
@@ -126,19 +106,13 @@ test.cb('invalid id or token', t => {
 			t.is(error.message, 'Unknown Webhook');
 			t.end();
 		} else {
-			t.fail();
 			t.end();
 		}
 	})
 });
 
 test.cb('send simple log message', t => {
-	const logger = new (winston.Logger)({
-		transports: [
-			new (DiscordLogger)({ webhooks: { id: process.env.WEBHOOK_ID, token: process.env.WEBHOOK_TOKEN } })
-		]
-	});
-
+	const logger = new (winston.Logger)({ transports: [new (DiscordLogger)({ webhooks: { id: process.env.WEBHOOK_ID, token: process.env.WEBHOOK_TOKEN } })] });
 	const message = 'This is a simple log message';
 
 	logger.log('error', message, (error, level, msg, meta) => {
