@@ -1,10 +1,10 @@
 {
-	"name": "winston-discord",
+	"name": "winston3-discord",
 	"version": "1.1.1",
 	"description": "A Discord transport for winston3 using webhooks",
 	"main": "index.js",
 	"repository": "https://github.com/tbutiu/winston-discord.git",
-	"author": "Bram <bram@bram.codes>",
+	"author": ["Bram <bram@bram.codes>","Butiu Victor Teodor <vbutiu@gmail.com>"],
 	"license": "MIT",
 	"scripts": {
 		"test": "nyc ava test.js",
