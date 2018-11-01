@@ -16,6 +16,7 @@
 	"devDependencies": {
 		"ava": "^0.25.0",
 		"codecov": "^3.0.2",
+		"dotenv": "^6.1.0",
 		"nyc": "^11.8.0"
 	},
 	"keywords": [

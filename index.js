@@ -1,4 +1,5 @@
 const winston = require('winston');
+const Transport = require('winston-transport');
 const util = require('util');
 const https = require('https');
 
@@ -13,52 +14,59 @@ const defaultColors = {
 
 const noColor = 0x36393E;
 
-module.exports = DiscordLogger = winston.transports.DiscordLogger = function(options) {
-	this.name = options.name || 'DiscordLogger';
-	this.level = options.level || 'info';
+module.exports = class DiscordLogger extends Transport {
+	constructor(options) {
+		super(options);
+		this.name = options.name || 'DiscordLogger';
+		this.level = options.level || 'info';
 
-	this.colors = options.colors || options.colors === false ? false : defaultColors;
-	if (typeof options.colors === 'object')
-		this.colors = options.colors;
+		this.colors = options.colors || options.colors === false ? false : defaultColors;
+		if (typeof options.colors === 'object')
+			this.colors = options.colors;
 
-	this.inline = options.inline;
+		this.inline = options.inline;
 
-	if (!options.webhooks)
-		throw new Error('Webhooks have to be set in options');
+		if (!options.webhooks)
+			throw new Error('Webhooks have to be set in options');
 
-	let webhooks = [];
-	if (typeof options.webhooks === 'string' || (typeof options.webhooks === 'object' && !Array.isArray(options.webhooks))) {
-		webhooks.push(options.webhooks)
-	} else if (Array.isArray(options.webhooks)) {
-		webhooks = options.webhooks;
-	} else {
-		throw new Error(`Webhooks has to be type 'string', 'object' or 'array'`);
-	}
-
-	webhooks = webhooks.map(webhook => {
-		if (typeof webhook === 'string') {
-			const webhookURLRegex = /(https?):\/\/([a-z0-9]*).*(discordapp.com)\/api(?:\/v([0-9]+))*\/webhooks\/([0-9]{1,20})\/([a-z0-9_-]+)/gi;
-			const match = webhookURLRegex.exec(webhook);
-			if (match) {
-				return { 'id': match[5], 'token': match[6] };
-			}
-
-			throw new Error(`Invalid webhook URL: ${webhook}`);
-
-		} else if (typeof webhook === 'object' && webhook.id && webhook.token) {
-			return {'id': webhook.id, 'token': webhook.token};
+		let webhooks = [];
+		if (typeof options.webhooks === 'string' || (typeof options.webhooks === 'object' && !Array.isArray(options.webhooks))) {
+			webhooks.push(options.webhooks)
+		} else if (Array.isArray(options.webhooks)) {
+			webhooks = options.webhooks;
 		} else {
-			throw new Error(`Webhook has no or invalid ID or Token: ${webhook}`);
+			throw new Error(`Webhooks has to be type 'string', 'object' or 'array'`);
 		}
-	});
 
-	this.webhooks = webhooks;
-};
+		webhooks = webhooks.map(webhook => {
+			if (typeof webhook === 'string') {
+				const webhookURLRegex = /(https?):\/\/([a-z0-9]*).*(discordapp.com)\/api(?:\/v([0-9]+))*\/webhooks\/([0-9]{1,20})\/([a-z0-9_-]+)/gi;
+				const match = webhookURLRegex.exec(webhook);
+				if (match) {
+					return { 'id': match[5], 'token': match[6] };
+				}
 
-util.inherits(DiscordLogger, winston.Transport);
+				throw new Error(`Invalid webhook URL: ${webhook}`);
 
-DiscordLogger.prototype.log = function (level, msg, meta, callback) {
-	const promises = this.webhooks.map(webhook => {
+			} else if (typeof webhook === 'object' && webhook.id && webhook.token) {
+				return {'id': webhook.id, 'token': webhook.token};
+			} else {
+
+				throw new Error(`Webhook has no or invalid ID or Token: ${webhook}`);
+			}
+		});
+
+		this.webhooks = webhooks;
+
+	};
+	close() {
+	    setImmediate(() => this.emit('closed:custom'));
+	}
+	log(info, callback) {
+	 	let level = info.level;
+	    let meta = info;
+	    let msg = info.message;
+	  	const promises = this.webhooks.map(webhook => {
 		return new Promise((resolve, reject) => {
 
 			const fields = Object.keys(meta).map(key => {
@@ -84,7 +92,6 @@ DiscordLogger.prototype.log = function (level, msg, meta, callback) {
 					timestamp: new Date().toISOString()
 				}]
 			});
-
 			// Post details
 			const post = {
 				hostname: 'discordapp.com',
@@ -121,14 +128,15 @@ DiscordLogger.prototype.log = function (level, msg, meta, callback) {
 	});
 
 	Promise.all(promises).then(results => {
-		let lvl = results[0].embeds[0].title;
-		let message = results[0].embeds[0].description;
-		let metadata = !results[0].embeds[0].fields ? null : results[0].embeds[0].fields.map((field) => {
-			return {[field.name]: field.value};
-		});
+			let lvl = results[0].embeds[0].title;
+			let message = results[0].embeds[0].description;
+			let metadata = !results[0].embeds[0].fields ? null : results[0].embeds[0].fields.map((field) => {
+				return {[field.name]: field.value};
+			});
 
-		callback(null, lvl, message, metadata);
-	}).catch(error => {
-		callback(error);
-	});
-};
+			callback(null, lvl, message, metadata);
+		}).catch(error => {
+			callback(error);
+		});
+	};
+}
